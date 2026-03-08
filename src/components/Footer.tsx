@@ -13,6 +13,7 @@ export function Footer() {
           <div className="flex items-center gap-4">
             <Link to="/hakkinda" className="hover:text-foreground transition-colors">Hakkında</Link>
             <Link to="/hakkinda" className="hover:text-foreground transition-colors">S.S.S</Link>
+            <Link to="/favoriler" className="hover:text-foreground transition-colors">Favoriler</Link>
           </div>
           <div className="flex items-center gap-1">
             <Heart className="h-3 w-3 text-danger" />
