@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -186,6 +187,24 @@ Yanıtını MUTLAKA aşağıdaki JSON yapısında ver (tool calling ile):
     }
 
     const result = JSON.parse(toolCall.function.arguments);
+
+    // Save to search history
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+      await supabaseClient.from("search_history").insert({
+        query_text: text || null,
+        query_url: url || null,
+        score: result.score,
+        summary: result.summary,
+      });
+      console.log("Search saved to history");
+    } catch (historyErr) {
+      console.error("Failed to save history:", historyErr);
+      // Don't fail the request if history save fails
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
