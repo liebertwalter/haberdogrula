@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Shield, Send, Link2, FileText, BarChart3, Search, AlertTriangle, CheckCircle2, XCircle, Clock, Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Shield, Send, Link2, FileText, BarChart3, Search, AlertTriangle, CheckCircle2, XCircle, Clock, Info, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,14 @@ import { StatsSection } from "@/components/StatsSection";
 import { Footer } from "@/components/Footer";
 import { ScoreCelebration } from "@/components/ScoreCelebration";
 import { HistoryFilter } from "@/components/HistoryFilter";
+import { ExamplePrompts } from "@/components/ExamplePrompts";
+import { TopProgressBar } from "@/components/TopProgressBar";
+import { BackToTop } from "@/components/BackToTop";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { PrintResult } from "@/components/PrintResult";
+import { TextStats } from "@/components/TextStats";
+import { ConfettiEffect } from "@/components/ConfettiEffect";
+import { HistorySearch } from "@/components/HistorySearch";
 import { factCheckNews, type FactCheckResult } from "@/lib/api/factcheck";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,7 +48,10 @@ const Index = () => {
   const [result, setResult] = useState<FactCheckResult | null>(null);
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const [historyFilter, setHistoryFilter] = useState("all");
+  const [historySearch, setHistorySearch] = useState("");
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<SearchHistoryItem | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [totalChecks, setTotalChecks] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -67,20 +78,29 @@ const Index = () => {
   }, [tab, text, url, isLoading, result]);
 
   const fetchHistory = async () => {
-    const { data } = await supabase
+    const { data, count } = await supabase
       .from("search_history")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
       .limit(20);
     if (data) setHistory(data as SearchHistoryItem[]);
+    if (count) setTotalChecks(count);
   };
 
   const filteredHistory = history.filter((item) => {
-    if (historyFilter === "all") return true;
-    if (historyFilter === "high") return item.score !== null && item.score >= 70;
-    if (historyFilter === "mid") return item.score !== null && item.score >= 40 && item.score < 70;
-    if (historyFilter === "low") return item.score !== null && item.score < 40;
-    return true;
+    const matchesFilter =
+      historyFilter === "all" ||
+      (historyFilter === "high" && item.score !== null && item.score >= 70) ||
+      (historyFilter === "mid" && item.score !== null && item.score >= 40 && item.score < 70) ||
+      (historyFilter === "low" && item.score !== null && item.score < 40);
+
+    const matchesSearch =
+      !historySearch ||
+      (item.query_text && item.query_text.toLowerCase().includes(historySearch.toLowerCase())) ||
+      (item.query_url && item.query_url.toLowerCase().includes(historySearch.toLowerCase())) ||
+      (item.summary && item.summary.toLowerCase().includes(historySearch.toLowerCase()));
+
+    return matchesFilter && matchesSearch;
   });
 
   const getScoreColor = (score: number | null) => {
@@ -101,10 +121,14 @@ const Index = () => {
     setLoadingStep(0);
     setResult(null);
     setSelectedHistoryItem(null);
+    setShowConfetti(false);
 
     try {
       const data = await factCheckNews(input);
       setResult(data);
+      if (data.score >= 80) {
+        setShowConfetti(true);
+      }
       fetchHistory();
     } catch (e: any) {
       toast({ title: "Hata", description: e.message || "Bir hata oluştu.", variant: "destructive" });
@@ -118,19 +142,31 @@ const Index = () => {
     setText("");
     setUrl("");
     setSelectedHistoryItem(null);
+    setShowConfetti(false);
   };
 
   const handleHistoryClick = (item: SearchHistoryItem) => {
     setSelectedHistoryItem(item);
   };
 
+  const handleExampleSelect = (exampleText: string) => {
+    setTab("text");
+    setText(exampleText);
+    toast({ title: "Örnek yüklendi", description: "Doğrula butonuna basarak test edin." });
+  };
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
-      {/* Background decorations */}
+      <TopProgressBar isLoading={isLoading} step={loadingStep} totalSteps={4} />
+      <ConfettiEffect score={result?.score ?? 0} trigger={showConfetti} />
+      <BackToTop />
+
+      {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-success/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-0 w-64 h-64 bg-warning/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-blob" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-success/5 rounded-full blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-0 w-64 h-64 bg-warning/5 rounded-full blur-3xl animate-blob animation-delay-4000" />
+        <div className="absolute top-1/4 right-0 w-72 h-72 bg-danger/5 rounded-full blur-3xl animate-blob animation-delay-3000" />
       </div>
 
       {/* Header */}
@@ -139,6 +175,11 @@ const Index = () => {
           <div className="flex items-center gap-2">
             <Shield className="h-7 w-7 text-primary" />
             <span className="text-xl font-bold tracking-tight">FactCheck</span>
+            {totalChecks > 0 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                {totalChecks} doğrulama
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <Link to="/hakkinda">
@@ -183,18 +224,21 @@ const Index = () => {
                     <Link2 className="h-4 w-4" /> URL
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="text" className="mt-4 space-y-1">
+                <TabsContent value="text" className="mt-4 space-y-2">
                   <Textarea
                     placeholder="Doğrulamak istediğiniz haber metnini buraya yapıştırın..."
                     className="min-h-[180px] resize-none text-base bg-card/80 backdrop-blur-sm"
                     value={text}
                     onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS))}
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground px-1">
-                    <span>Ctrl+Enter ile gönder</span>
-                    <span className={text.length > MAX_CHARS * 0.9 ? "text-warning" : ""}>
-                      {text.length}/{MAX_CHARS}
-                    </span>
+                  <div className="flex justify-between items-center px-1">
+                    <TextStats text={text} />
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Ctrl+Enter</span>
+                      <span className={text.length > MAX_CHARS * 0.9 ? "text-warning" : ""}>
+                        {text.length}/{MAX_CHARS}
+                      </span>
+                    </div>
                   </div>
                 </TabsContent>
                 <TabsContent value="url" className="mt-4">
@@ -207,10 +251,13 @@ const Index = () => {
                   />
                   <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
                     <span>Haber sayfasının URL'sini yapıştırın</span>
-                    <span>Ctrl+Enter ile gönder</span>
+                    <span>Ctrl+Enter</span>
                   </div>
                 </TabsContent>
               </Tabs>
+
+              {/* Example prompts */}
+              <ExamplePrompts onSelect={handleExampleSelect} />
 
               <Button
                 onClick={handleSubmit}
@@ -223,12 +270,15 @@ const Index = () => {
               {/* Recent searches */}
               {history.length > 0 && (
                 <div className="space-y-3 pt-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Son Aramalar
                     </h2>
                     <HistoryFilter activeFilter={historyFilter} onFilterChange={setHistoryFilter} />
                   </div>
+
+                  <HistorySearch value={historySearch} onChange={setHistorySearch} />
+
                   <div className="space-y-2">
                     {filteredHistory.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-4">Bu filtreye uygun sonuç yok</p>
@@ -353,8 +403,10 @@ const Index = () => {
                 <ScoreCelebration score={result.score} />
               </div>
 
-              <div className="flex justify-center">
+              <div className="flex flex-wrap justify-center gap-2">
                 <ShareButtons result={result} />
+                <FavoriteButton result={result} />
+                <PrintResult result={result} />
               </div>
 
               <div className="space-y-4">
