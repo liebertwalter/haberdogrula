@@ -14,7 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      search_history: {
+        Row: {
+          created_at: string
+          id: string
+          query_text: string | null
+          query_url: string | null
+          score: number | null
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query_text?: string | null
+          query_url?: string | null
+          score?: number | null
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query_text?: string | null
+          query_url?: string | null
+          score?: number | null
+          summary?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
