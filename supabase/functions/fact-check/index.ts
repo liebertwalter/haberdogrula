@@ -254,6 +254,30 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
+      } else if (isTikTokUrl(formattedUrl)) {
+        console.log("Detected TikTok URL, using special handler:", formattedUrl);
+        const tiktokContent = await fetchTikTokContent(formattedUrl);
+        if (tiktokContent) {
+          newsContent = tiktokContent;
+          console.log("TikTok content fetched successfully");
+        } else {
+          return new Response(
+            JSON.stringify({ error: "TikTok içeriği çekilemedi. Lütfen video açıklamasını doğrudan yapıştırın." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else if (isTelegramUrl(formattedUrl)) {
+        console.log("Detected Telegram URL, using special handler:", formattedUrl);
+        const telegramContent = await fetchTelegramContent(formattedUrl);
+        if (telegramContent) {
+          newsContent = telegramContent;
+          console.log("Telegram content fetched successfully");
+        } else {
+          return new Response(
+            JSON.stringify({ error: "Telegram içeriği çekilemedi. Lütfen mesaj metnini doğrudan yapıştırın." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       } else {
         // Use Firecrawl for other URLs
         const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
