@@ -1,8 +1,6 @@
-import { Shield, ArrowLeft, Brain, Globe, Lock, Zap } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Brain, Globe, Lock, Zap } from "lucide-react";
+import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const faqs = [
   { q: "FactCheck nasıl çalışır?", a: "Girdiğiniz haber metni veya URL, yapay zeka tarafından analiz edilir. İnternetteki güvenilir kaynaklarla karşılaştırılarak bir güvenilirlik puanı hesaplanır." },
@@ -21,23 +19,8 @@ const features = [
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/50 backdrop-blur-md sticky top-0 z-50 bg-background/70">
-        <div className="container mx-auto flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-2">
-            <Link to="/">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Shield className="h-7 w-7 text-primary" />
-            <span className="text-xl font-bold tracking-tight">Hakkında</span>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 max-w-2xl space-y-8">
+    <Layout>
+      <div className="space-y-8">
         <div className="text-center space-y-3 pt-4">
           <h1 className="text-3xl font-bold">FactCheck - Haber Doğrula</h1>
           <p className="text-muted-foreground">
@@ -64,9 +47,7 @@ export default function About() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">{faq.q}</CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {faq.a}
-              </CardContent>
+              <CardContent className="text-sm text-muted-foreground">{faq.a}</CardContent>
             </Card>
           ))}
         </div>
@@ -74,7 +55,7 @@ export default function About() {
         <div className="text-center text-xs text-muted-foreground py-4">
           © 2026 Postal Dijital. Tüm hakları saklıdır.
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }
