@@ -7,6 +7,86 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function isTwitterUrl(url: string): boolean {
+  return /^https?:\/\/(www\.)?(twitter\.com|x\.com)\//i.test(url);
+}
+
+async function fetchTweetContent(url: string): Promise<string | null> {
+  // Method 1: Twitter oEmbed API (no auth needed)
+  try {
+    const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`;
+    const res = await fetch(oembedUrl);
+    if (res.ok) {
+      const data = await res.json();
+      // Extract text from the HTML response
+      const html = data.html || "";
+      // Strip HTML tags to get plain text
+      const text = html
+        .replace(/<blockquote[^>]*>/gi, "")
+        .replace(/<\/blockquote>/gi, "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<a[^>]*>(.*?)<\/a>/gi, "$1")
+        .replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&mdash;/g, "—")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .trim();
+
+      if (text) {
+        const authorName = data.author_name || "";
+        const authorUrl = data.author_url || "";
+        return `Tweet by ${authorName} (${authorUrl}):\n\n${text}`;
+      }
+    }
+  } catch (e) {
+    console.error("oEmbed failed:", e);
+  }
+
+  // Method 2: Try fxtwitter API (public, no auth)
+  try {
+    const fxUrl = url
+      .replace("twitter.com", "api.fxtwitter.com")
+      .replace("x.com", "api.fxtwitter.com");
+    const res = await fetch(fxUrl);
+    if (res.ok) {
+      const data = await res.json();
+      const tweet = data.tweet;
+      if (tweet) {
+        const author = tweet.author?.name || "";
+        const handle = tweet.author?.screen_name || "";
+        const text = tweet.text || "";
+        const media = tweet.media?.all?.map((m: any) => m.type).join(", ") || "";
+        return `Tweet by ${author} (@${handle}):\n\n${text}${media ? `\n\n[Medya: ${media}]` : ""}`;
+      }
+    }
+  } catch (e) {
+    console.error("fxtwitter failed:", e);
+  }
+
+  // Method 3: Try vxtwitter
+  try {
+    const vxUrl = url
+      .replace("twitter.com", "api.vxtwitter.com")
+      .replace("x.com", "api.vxtwitter.com");
+    const res = await fetch(vxUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.text) {
+        return `Tweet by ${data.user_name || ""} (@${data.user_screen_name || ""}):\n\n${data.text}`;
+      }
+    }
+  } catch (e) {
+    console.error("vxtwitter failed:", e);
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,50 +104,66 @@ serve(async (req) => {
 
     let newsContent = text || "";
 
-    // If URL provided, scrape content with Firecrawl
+    // If URL provided, scrape content
     if (url && !text) {
-      const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
-      if (!firecrawlKey) {
-        return new Response(
-          JSON.stringify({ error: "Firecrawl yapılandırılmamış" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       let formattedUrl = url.trim();
       if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
         formattedUrl = `https://${formattedUrl}`;
       }
 
-      console.log("Scraping URL:", formattedUrl);
-      const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${firecrawlKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: formattedUrl,
-          formats: ["markdown"],
-          onlyMainContent: true,
-        }),
-      });
+      // Special handling for Twitter/X URLs
+      if (isTwitterUrl(formattedUrl)) {
+        console.log("Detected Twitter/X URL, using special handler:", formattedUrl);
+        const tweetContent = await fetchTweetContent(formattedUrl);
+        if (tweetContent) {
+          newsContent = tweetContent;
+          console.log("Tweet content fetched successfully");
+        } else {
+          return new Response(
+            JSON.stringify({ error: "X/Twitter içeriği çekilemedi. Lütfen tweet metnini doğrudan yapıştırın." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
+        // Use Firecrawl for other URLs
+        const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+        if (!firecrawlKey) {
+          return new Response(
+            JSON.stringify({ error: "Firecrawl yapılandırılmamış" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
 
-      const scrapeData = await scrapeRes.json();
-      if (!scrapeRes.ok) {
-        console.error("Firecrawl error:", scrapeData);
-        return new Response(
-          JSON.stringify({ error: "URL içeriği çekilemedi: " + (scrapeData.error || scrapeRes.status) }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+        console.log("Scraping URL:", formattedUrl);
+        const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${firecrawlKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: formattedUrl,
+            formats: ["markdown"],
+            onlyMainContent: true,
+          }),
+        });
 
-      newsContent = scrapeData.data?.markdown || scrapeData.markdown || "";
-      if (!newsContent) {
-        return new Response(
-          JSON.stringify({ error: "URL'den içerik çekilemedi" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        const scrapeData = await scrapeRes.json();
+        if (!scrapeRes.ok) {
+          console.error("Firecrawl error:", scrapeData);
+          return new Response(
+            JSON.stringify({ error: "URL içeriği çekilemedi: " + (scrapeData.error || scrapeRes.status) }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        newsContent = scrapeData.data?.markdown || scrapeData.markdown || "";
+        if (!newsContent) {
+          return new Response(
+            JSON.stringify({ error: "URL'den içerik çekilemedi" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       }
     }
 
@@ -203,7 +299,6 @@ Yanıtını MUTLAKA aşağıdaki JSON yapısında ver (tool calling ile):
       console.log("Search saved to history");
     } catch (historyErr) {
       console.error("Failed to save history:", historyErr);
-      // Don't fail the request if history save fails
     }
 
     return new Response(JSON.stringify(result), {
