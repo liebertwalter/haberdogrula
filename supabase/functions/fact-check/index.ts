@@ -375,16 +375,28 @@ serve(async (req) => {
       );
     }
 
+    // Use Turkey timezone for date awareness
+    const turkeyDate = new Date().toLocaleString("tr-TR", { timeZone: "Europe/Istanbul", dateStyle: "full", timeStyle: "short" });
     const currentDate = new Date().toISOString().split("T")[0];
 
-    const systemPrompt = `Sen bir profesyonel haber doğrulama uzmanısın. Bugünün tarihi: ${currentDate}.
+    const systemPrompt = `Sen bir profesyonel haber doğrulama uzmanısın. 
+Bugünün tarihi ve saati (Türkiye saati): ${turkeyDate}
+ISO Tarih: ${currentDate}
 
 GÜNCELLİK BİLGİLERİ (Mart 2026 itibarıyla):
 - ABD Başkanı: Donald Trump (Ocak 2025'te göreve başladı, 47. Başkan)
 - Türkiye Cumhurbaşkanı: Recep Tayyip Erdoğan
 - Rusya Devlet Başkanı: Vladimir Putin
+- Ukrayna Devlet Başkanı: Volodymyr Zelenskyy
+- İngiltere Başbakanı: Keir Starmer
+- Fransa Cumhurbaşkanı: Emmanuel Macron
+- Almanya Başbakanı: Friedrich Merz
 - Joe Biden artık ABD başkanı DEĞİLDİR (Ocak 2025'te görevi bıraktı)
-- Bu bilgileri haberleri değerlendirirken dikkate al. Eski bilgiler içeren haberlere dikkat et.
+- Angela Merkel artık Almanya başbakanı DEĞİLDİR
+- Bu bilgileri haberleri değerlendirirken mutlaka dikkate al
+- Haberdeki tarihler ile bugünün tarihini karşılaştır
+- Gelecek tarihli haberler şüpheli olabilir
+- Çok eski tarihli haberler güncelliğini yitirmiş olabilir
 
 PUANLAMA REHBERİ (Çok sıkı ol):
 - 90-100: Birden fazla güvenilir kaynak tarafından doğrulanmış, resmi açıklama var
