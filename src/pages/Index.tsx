@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Shield, Send, Link2, FileText, BarChart3, Search, AlertTriangle, CheckCircle2, XCircle, Clock, Info, Heart } from "lucide-react";
+import { Shield, Send, Link2, FileText, BarChart3, Search, AlertTriangle, CheckCircle2, XCircle, Clock, Info, Heart, Scale } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,20 @@ import { PrintResult } from "@/components/PrintResult";
 import { TextStats } from "@/components/TextStats";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { HistorySearch } from "@/components/HistorySearch";
+import { TipBanner } from "@/components/TipBanner";
+import { ScoreBreakdown } from "@/components/ScoreBreakdown";
+import { CategoryBadge } from "@/components/CategoryBadge";
+import { TrendingTopics } from "@/components/TrendingTopics";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { ResultFeedback } from "@/components/ResultFeedback";
+import { ScoreInterpretation } from "@/components/ScoreInterpretation";
+import { NetworkStatus } from "@/components/NetworkStatus";
+import { ReadingTime } from "@/components/ReadingTime";
+import { CompareMode } from "@/components/CompareMode";
+import { ScoreTrend } from "@/components/ScoreTrend";
+import { VoiceInput } from "@/components/VoiceInput";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { QuickSummary } from "@/components/QuickSummary";
 import { factCheckNews, type FactCheckResult } from "@/lib/api/factcheck";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +55,7 @@ const MAX_CHARS = 5000;
 
 const Index = () => {
   const [tab, setTab] = useState("text");
+  const [inputMode, setInputMode] = useState<"single" | "compare">("single");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +67,8 @@ const Index = () => {
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<SearchHistoryItem | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [totalChecks, setTotalChecks] = useState(0);
+  const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,6 +80,16 @@ const Index = () => {
     const interval = setInterval(() => {
       setLoadingStep((prev) => (prev < 3 ? prev + 1 : prev));
     }, 2500);
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  // Timer during loading
+  useEffect(() => {
+    if (!isLoading) return;
+    setLoadingStartTime(Date.now());
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - (loadingStartTime || Date.now())) / 1000));
+    }, 1000);
     return () => clearInterval(interval);
   }, [isLoading]);
 
@@ -122,6 +149,7 @@ const Index = () => {
     setResult(null);
     setSelectedHistoryItem(null);
     setShowConfetti(false);
+    setElapsedTime(0);
 
     try {
       const data = await factCheckNews(input);
@@ -151,8 +179,14 @@ const Index = () => {
 
   const handleExampleSelect = (exampleText: string) => {
     setTab("text");
+    setInputMode("single");
     setText(exampleText);
     toast({ title: "Örnek yüklendi", description: "Doğrula butonuna basarak test edin." });
+  };
+
+  const handleVoiceResult = (transcript: string) => {
+    setText((prev) => (prev + " " + transcript).trim().slice(0, MAX_CHARS));
+    toast({ title: "Ses algılandı 🎤", description: "Metin eklendi." });
   };
 
   return (
@@ -160,6 +194,8 @@ const Index = () => {
       <TopProgressBar isLoading={isLoading} step={loadingStep} totalSteps={4} />
       <ConfettiEffect score={result?.score ?? 0} trigger={showConfetti} />
       <BackToTop />
+      <NetworkStatus />
+      <OnboardingGuide />
 
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
@@ -169,6 +205,9 @@ const Index = () => {
         <div className="absolute top-1/4 right-0 w-72 h-72 bg-danger/5 rounded-full blur-3xl animate-blob animation-delay-3000" />
       </div>
 
+      {/* Tip Banner */}
+      <TipBanner />
+
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-md sticky top-0 z-50 bg-background/70">
         <div className="container mx-auto flex items-center justify-between h-16 px-4">
@@ -176,18 +215,23 @@ const Index = () => {
             <Shield className="h-7 w-7 text-primary" />
             <span className="text-xl font-bold tracking-tight">FactCheck</span>
             {totalChecks > 0 && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium hidden sm:inline">
                 {totalChecks} doğrulama
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
+            <Link to="/favoriler">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Heart className="h-5 w-5" />
+              </Button>
+            </Link>
             <Link to="/hakkinda">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Info className="h-5 w-5" />
               </Button>
             </Link>
-            <ThemeToggle />
+            <ThemeSwitcher />
           </div>
         </div>
       </header>
@@ -200,10 +244,10 @@ const Index = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
+              className="space-y-6"
             >
               {/* Hero */}
-              <div className="text-center space-y-2 pt-8">
+              <div className="text-center space-y-2 pt-6">
                 <h1 className="text-4xl font-bold tracking-tight">Haber Doğrula</h1>
                 <p className="text-sm text-muted-foreground">Postal Dijital tarafından oluşturuldu</p>
                 <p className="text-muted-foreground text-lg pt-2">
@@ -213,63 +257,98 @@ const Index = () => {
 
               {/* Stats */}
               <StatsSection />
+              <ScoreTrend />
 
-              {/* Input */}
-              <Tabs value={tab} onValueChange={setTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="text" className="gap-2">
-                    <FileText className="h-4 w-4" /> Metin
-                  </TabsTrigger>
-                  <TabsTrigger value="url" className="gap-2">
-                    <Link2 className="h-4 w-4" /> URL
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="text" className="mt-4 space-y-2">
-                  <Textarea
-                    placeholder="Doğrulamak istediğiniz haber metnini buraya yapıştırın..."
-                    className="min-h-[180px] resize-none text-base bg-card/80 backdrop-blur-sm"
-                    value={text}
-                    onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS))}
-                  />
-                  <div className="flex justify-between items-center px-1">
-                    <TextStats text={text} />
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Ctrl+Enter</span>
-                      <span className={text.length > MAX_CHARS * 0.9 ? "text-warning" : ""}>
-                        {text.length}/{MAX_CHARS}
-                      </span>
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="url" className="mt-4">
-                  <Input
-                    type="url"
-                    placeholder="https://example.com/haber-basligi"
-                    className="text-base h-12 bg-card/80 backdrop-blur-sm"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
-                    <span>Haber sayfasının URL'sini yapıştırın</span>
-                    <span>Ctrl+Enter</span>
-                  </div>
-                </TabsContent>
-              </Tabs>
+              {/* Mode selector */}
+              <div className="flex items-center gap-2 justify-center">
+                <Button
+                  variant={inputMode === "single" ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1.5 text-xs rounded-full"
+                  onClick={() => setInputMode("single")}
+                >
+                  <Search className="h-3.5 w-3.5" /> Tekli Doğrulama
+                </Button>
+                <Button
+                  variant={inputMode === "compare" ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1.5 text-xs rounded-full"
+                  onClick={() => setInputMode("compare")}
+                >
+                  <Scale className="h-3.5 w-3.5" /> Karşılaştır
+                </Button>
+              </div>
 
-              {/* Example prompts */}
-              <ExamplePrompts onSelect={handleExampleSelect} />
+              {inputMode === "compare" ? (
+                <CompareMode />
+              ) : (
+                <>
+                  {/* Input */}
+                  <Tabs value={tab} onValueChange={setTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="text" className="gap-2">
+                        <FileText className="h-4 w-4" /> Metin
+                      </TabsTrigger>
+                      <TabsTrigger value="url" className="gap-2">
+                        <Link2 className="h-4 w-4" /> URL
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="text" className="mt-4 space-y-2">
+                      <div className="flex gap-2">
+                        <Textarea
+                          placeholder="Doğrulamak istediğiniz haber metnini buraya yapıştırın..."
+                          className="min-h-[160px] resize-none text-base bg-card/80 backdrop-blur-sm flex-1"
+                          value={text}
+                          onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS))}
+                        />
+                        <div className="flex flex-col gap-2">
+                          <VoiceInput onResult={handleVoiceResult} />
+                        </div>
+                      </div>
+                      {text && <CategoryBadge text={text} />}
+                      <div className="flex justify-between items-center px-1">
+                        <TextStats text={text} />
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="hidden sm:inline">Ctrl+Enter</span>
+                          <span className={text.length > MAX_CHARS * 0.9 ? "text-warning" : ""}>
+                            {text.length}/{MAX_CHARS}
+                          </span>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="url" className="mt-4">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/haber-basligi"
+                        className="text-base h-12 bg-card/80 backdrop-blur-sm"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
+                        <span>Haber sayfasının URL'sini yapıştırın</span>
+                        <span>Ctrl+Enter</span>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
 
-              <Button
-                onClick={handleSubmit}
-                className="w-full h-12 text-base gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-                size="lg"
-              >
-                <Send className="h-5 w-5" /> Doğrula
-              </Button>
+                  <ExamplePrompts onSelect={handleExampleSelect} />
+
+                  <Button
+                    onClick={handleSubmit}
+                    className="w-full h-12 text-base gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                    size="lg"
+                  >
+                    <Send className="h-5 w-5" /> Doğrula
+                  </Button>
+                </>
+              )}
+
+              {/* Trending topics */}
+              <TrendingTopics />
 
               {/* Recent searches */}
               {history.length > 0 && (
-                <div className="space-y-3 pt-4">
+                <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Son Aramalar
@@ -286,7 +365,7 @@ const Index = () => {
                     {filteredHistory.map((item) => (
                       <Card
                         key={item.id}
-                        className="bg-card/60 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-colors cursor-pointer"
+                        className="bg-card/60 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all cursor-pointer hover:scale-[1.01]"
                         onClick={() => handleHistoryClick(item)}
                       >
                         <CardContent className="p-3 flex items-center justify-between">
@@ -328,7 +407,8 @@ const Index = () => {
               className="flex flex-col items-center pt-12"
             >
               <h2 className="text-2xl font-bold mb-2">Araştırılıyor...</h2>
-              <p className="text-muted-foreground mb-4">Haber internette araştırılıyor ve doğrulanıyor</p>
+              <p className="text-muted-foreground mb-1">Haber internette araştırılıyor ve doğrulanıyor</p>
+              <p className="text-xs text-muted-foreground mb-4">{elapsedTime > 0 && `${elapsedTime} saniye geçti...`}</p>
               <LoadingSteps currentStep={loadingStep} />
             </motion.div>
           )}
@@ -356,9 +436,12 @@ const Index = () => {
               </div>
 
               {selectedHistoryItem.score !== null && (
-                <div className="flex justify-center">
-                  <ScoreGauge score={selectedHistoryItem.score} />
-                </div>
+                <>
+                  <div className="flex justify-center">
+                    <ScoreGauge score={selectedHistoryItem.score} />
+                  </div>
+                  <ScoreInterpretation score={selectedHistoryItem.score} />
+                </>
               )}
 
               <Card className="bg-card/60 backdrop-blur-sm border-border/50">
@@ -393,7 +476,7 @@ const Index = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="space-y-6 pt-4"
+              className="space-y-5 pt-4"
             >
               <div className="flex justify-center">
                 <ScoreGauge score={result.score} />
@@ -403,11 +486,17 @@ const Index = () => {
                 <ScoreCelebration score={result.score} />
               </div>
 
+              <ScoreInterpretation score={result.score} />
+              <QuickSummary result={result} />
+              <ReadingTime result={result} />
+
               <div className="flex flex-wrap justify-center gap-2">
                 <ShareButtons result={result} />
                 <FavoriteButton result={result} />
                 <PrintResult result={result} />
               </div>
+
+              <ScoreBreakdown result={result} />
 
               <div className="space-y-4">
                 <ResultCard icon={BarChart3} title="Genel Değerlendirme" delay={0.2}>
@@ -419,7 +508,7 @@ const Index = () => {
                     <ul className="space-y-2">
                       {result.sources.map((s, i) => (
                         <li key={i}>
-                          <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">
                             {s.title || s.url}
                           </a>
                         </li>
@@ -452,6 +541,8 @@ const Index = () => {
                   </ResultCard>
                 )}
               </div>
+
+              <ResultFeedback />
 
               <Button onClick={handleReset} variant="outline" className="w-full h-12 text-base">
                 Yeni Doğrulama Yap
