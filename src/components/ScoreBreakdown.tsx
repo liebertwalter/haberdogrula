@@ -6,12 +6,22 @@ interface ScoreBreakdownProps {
 }
 
 export function ScoreBreakdown({ result }: ScoreBreakdownProps) {
-  const metrics = [
-    { label: "Kaynak Güvenilirliği", value: Math.min(100, result.sources.length * 25), color: "bg-primary" },
-    { label: "Doğrulanan Bilgi", value: result.verified.length > 0 ? Math.min(100, result.verified.length * 20 + 30) : 10, color: "bg-success" },
-    { label: "Uyarı Seviyesi", value: result.warnings.length > 0 ? Math.max(10, 100 - result.warnings.length * 25) : 100, color: "bg-warning" },
-    { label: "Yanlış Bilgi Oranı", value: result.debunked.length > 0 ? Math.max(5, 100 - result.debunked.length * 30) : 100, color: "bg-danger" },
-  ];
+  const detailed = result.detailedScores;
+
+  const metrics = detailed
+    ? [
+        { label: "Kaynak Güvenilirliği", value: detailed.sourceReliability, color: "bg-primary" },
+        { label: "Olgusal Doğruluk", value: detailed.factualAccuracy, color: "bg-success" },
+        { label: "Tarafsızlık", value: detailed.bias, color: "bg-warning" },
+        { label: "Güncellik", value: detailed.freshness, color: "bg-[hsl(200,80%,50%)]" },
+        { label: "Tutarlılık", value: detailed.consistency, color: "bg-danger" },
+      ]
+    : [
+        { label: "Kaynak Güvenilirliği", value: Math.min(100, result.sources.length * 25), color: "bg-primary" },
+        { label: "Doğrulanan Bilgi", value: result.verified.length > 0 ? Math.min(100, result.verified.length * 20 + 30) : 10, color: "bg-success" },
+        { label: "Uyarı Seviyesi", value: result.warnings.length > 0 ? Math.max(10, 100 - result.warnings.length * 25) : 100, color: "bg-warning" },
+        { label: "Yanlış Bilgi Oranı", value: result.debunked.length > 0 ? Math.max(5, 100 - result.debunked.length * 30) : 100, color: "bg-danger" },
+      ];
 
   return (
     <div className="space-y-3 p-4 rounded-xl bg-card/60 backdrop-blur-sm border border-border/50">
@@ -22,7 +32,7 @@ export function ScoreBreakdown({ result }: ScoreBreakdownProps) {
             <span className="text-muted-foreground">{m.label}</span>
             <span className="font-medium">%{m.value}</span>
           </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
               className={`h-full rounded-full ${m.color}`}
               initial={{ width: 0 }}
