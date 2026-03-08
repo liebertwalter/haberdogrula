@@ -38,6 +38,10 @@ import { ScoreTrend } from "@/components/ScoreTrend";
 import { VoiceInput } from "@/components/VoiceInput";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { QuickSummary } from "@/components/QuickSummary";
+import { VerificationBadges } from "@/components/VerificationBadges";
+import { ReliabilityMeter } from "@/components/ReliabilityMeter";
+import { SourceCredibility } from "@/components/SourceCredibility";
+import { FactCheckTips } from "@/components/FactCheckTips";
 import { factCheckNews, type FactCheckResult } from "@/lib/api/factcheck";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -486,17 +490,22 @@ const Index = () => {
                 <ScoreCelebration score={result.score} summary={result.summary} />
               </div>
 
+              <VerificationBadges result={result} />
               <ScoreInterpretation score={result.score} />
+              <ReliabilityMeter result={result} />
               <QuickSummary result={result} />
               <ReadingTime result={result} />
 
               <div className="flex flex-wrap justify-center gap-2">
                 <ShareButtons result={result} />
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
                 <FavoriteButton result={result} />
                 <PrintResult result={result} />
               </div>
 
               <ScoreBreakdown result={result} />
+              <SourceCredibility result={result} />
 
               <div className="space-y-4">
                 <ResultCard icon={BarChart3} title="Genel Değerlendirme" delay={0.2}>
@@ -542,6 +551,7 @@ const Index = () => {
                 )}
               </div>
 
+              <FactCheckTips result={result} />
               <ResultFeedback />
 
               <Button onClick={handleReset} variant="outline" className="w-full h-12 text-base">

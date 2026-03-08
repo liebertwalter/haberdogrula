@@ -326,6 +326,46 @@ serve(async (req) => {
       newsContent = newsContent.substring(0, 5000);
     }
 
+    // Step 1: Web search verification using Firecrawl
+    let webSearchContext = "";
+    const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+    if (firecrawlKey) {
+      try {
+        // Extract key claims for search
+        const searchQuery = newsContent.substring(0, 200).replace(/\n/g, " ").trim();
+        console.log("Searching web for verification:", searchQuery.substring(0, 80));
+        
+        const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${firecrawlKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: searchQuery,
+            limit: 5,
+            lang: "tr",
+            tbs: "qdr:m", // last month for freshness
+          }),
+        });
+
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          const results = searchData.data || searchData.results || [];
+          if (results.length > 0) {
+            webSearchContext = "\n\n--- WEB ARAMA SONUÇLARI (Güncel bilgiler) ---\n";
+            for (const r of results.slice(0, 5)) {
+              webSearchContext += `\nKaynak: ${r.title || "Bilinmiyor"}\nURL: ${r.url || ""}\nÖzet: ${r.description || r.snippet || ""}\n`;
+            }
+            webSearchContext += "\n--- WEB ARAMA SONU ---\n";
+            console.log(`Found ${results.length} web search results for verification`);
+          }
+        }
+      } catch (searchErr) {
+        console.error("Web search failed (continuing without):", searchErr);
+      }
+    }
+
     // Use Lovable AI to fact-check
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -335,24 +375,49 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `Sen bir profesyonel haber doğrulama uzmanısın. Sana verilen haber metnini analiz et ve doğruluğunu değerlendir.
+    const currentDate = new Date().toISOString().split("T")[0];
 
-Yanıtını MUTLAKA aşağıdaki JSON yapısında ver (tool calling ile):
-- score: 0-100 arası bir güvenilirlik puanı (100 = kesinlikle doğru, 0 = kesinlikle yanlış)
-- summary: Haberin genel değerlendirmesi (2-3 cümle, Türkçe)
-- sources: Doğrulama için referans alınabilecek kaynaklar [{title, url}] (en az 2-3 gerçek kaynak)
-- warnings: Dikkat edilmesi gereken noktalar (string dizisi)
-- verified: Haberdeki doğru bulunan bilgiler (string dizisi)
-- debunked: Haberdeki yanlış bulunan bilgiler (string dizisi)
+    const systemPrompt = `Sen bir profesyonel haber doğrulama uzmanısın. Bugünün tarihi: ${currentDate}.
 
-ÖNEMLİ KURALLAR:
-- Haberin içeriğindeki iddiaları, bilinen gerçeklerle karşılaştır.
-- Tarih, isim, yer gibi somut bilgileri kontrol et.
-- Eğer haber tamamen uydurma veya manipülatif görünüyorsa düşük puan ver.
-- Kısmi doğruluk varsa orta puan ver.
-- Kaynaklar gerçek ve erişilebilir web adresleri olmalı.`;
+GÜNCELLİK BİLGİLERİ (Mart 2026 itibarıyla):
+- ABD Başkanı: Donald Trump (Ocak 2025'te göreve başladı, 47. Başkan)
+- Türkiye Cumhurbaşkanı: Recep Tayyip Erdoğan
+- Rusya Devlet Başkanı: Vladimir Putin
+- Joe Biden artık ABD başkanı DEĞİLDİR (Ocak 2025'te görevi bıraktı)
+- Bu bilgileri haberleri değerlendirirken dikkate al. Eski bilgiler içeren haberlere dikkat et.
+
+PUANLAMA REHBERİ (Çok sıkı ol):
+- 90-100: Birden fazla güvenilir kaynak tarafından doğrulanmış, resmi açıklama var
+- 70-89: Büyük medya kuruluşları tarafından aktarılmış, tutarlı bilgiler
+- 50-69: Kısmi doğruluk, bazı bilgiler eksik veya yanıltıcı
+- 30-49: Önemli yanlışlıklar içeriyor, manipülatif unsurlar var
+- 10-29: Büyük ölçüde yanlış veya uydurma
+- 0-9: Tamamen uydurma, dezenformasyon
+
+PUANLAMA KURALLARI:
+- Güncel olmayan bilgiler (ör: eski liderler) varsa otomatik olarak 20 puan düş
+- Kaynak belirtilmemiş haberlere 60'tan fazla verme
+- Duygusal/sansasyonel dil kullanan haberlere şüpheyle yaklaş (-10 puan)
+- Birden fazla bağımsız kaynak doğruluyorsa +15 puan
+
+Yanıtını MUTLAKA aşağıdaki yapıda ver:
+- score: 0-100 arası güvenilirlik puanı
+- summary: Haberin genel değerlendirmesi (3-4 cümle, Türkçe, detaylı)
+- sources: Doğrulama kaynakları [{title, url}] (en az 3 gerçek ve erişilebilir kaynak)
+- warnings: Dikkat edilmesi gereken noktalar (detaylı açıklamalarla)
+- verified: Doğru bulunan bilgiler (her biri açıklamalı)
+- debunked: Yanlış bulunan bilgiler (her biri neden yanlış olduğu ile)
+- category: Haber kategorisi (siyaset/ekonomi/sağlık/teknoloji/spor/dünya/bilim/magazin/diğer)
+- sentiment: Haberin duygu tonu (olumlu/olumsuz/nötr/korkutucu/umut_verici)
+- freshness: Bilgilerin güncelliği (güncel/eski/belirsiz)
+- confidence: AI'ın kendi güven seviyesi (düşük/orta/yüksek)
+- detailedScores: Alt kategori puanları {sourceReliability: 0-100, factualAccuracy: 0-100, bias: 0-100, freshness: 0-100, consistency: 0-100}`;
 
     console.log("Calling Lovable AI for fact-checking...");
+
+    const userMessage = webSearchContext
+      ? `Aşağıdaki haberi doğrula. Web araması sonuçlarını da referans olarak kullan:\n\n--- HABER ---\n${newsContent}\n${webSearchContext}`
+      : `Aşağıdaki haberi doğrula:\n\n${newsContent}`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -364,7 +429,7 @@ Yanıtını MUTLAKA aşağıdaki JSON yapısında ver (tool calling ile):
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Aşağıdaki haberi doğrula:\n\n${newsContent}` },
+          { role: "user", content: userMessage },
         ],
         tools: [
           {
@@ -376,7 +441,7 @@ Yanıtını MUTLAKA aşağıdaki JSON yapısında ver (tool calling ile):
                 type: "object",
                 properties: {
                   score: { type: "number", description: "0-100 arası güvenilirlik puanı" },
-                  summary: { type: "string", description: "Genel değerlendirme" },
+                  summary: { type: "string", description: "Genel değerlendirme (3-4 cümle)" },
                   sources: {
                     type: "array",
                     items: {
@@ -392,8 +457,24 @@ Yanıtını MUTLAKA aşağıdaki JSON yapısında ver (tool calling ile):
                   warnings: { type: "array", items: { type: "string" } },
                   verified: { type: "array", items: { type: "string" } },
                   debunked: { type: "array", items: { type: "string" } },
+                  category: { type: "string", description: "siyaset/ekonomi/sağlık/teknoloji/spor/dünya/bilim/magazin/diğer" },
+                  sentiment: { type: "string", description: "olumlu/olumsuz/nötr/korkutucu/umut_verici" },
+                  freshness: { type: "string", description: "güncel/eski/belirsiz" },
+                  confidence: { type: "string", description: "düşük/orta/yüksek" },
+                  detailedScores: {
+                    type: "object",
+                    properties: {
+                      sourceReliability: { type: "number" },
+                      factualAccuracy: { type: "number" },
+                      bias: { type: "number" },
+                      freshness: { type: "number" },
+                      consistency: { type: "number" },
+                    },
+                    required: ["sourceReliability", "factualAccuracy", "bias", "freshness", "consistency"],
+                    additionalProperties: false,
+                  },
                 },
-                required: ["score", "summary", "sources", "warnings", "verified", "debunked"],
+                required: ["score", "summary", "sources", "warnings", "verified", "debunked", "category", "sentiment", "freshness", "confidence", "detailedScores"],
                 additionalProperties: false,
               },
             },
@@ -437,6 +518,8 @@ Yanıtını MUTLAKA aşağıdaki JSON yapısında ver (tool calling ile):
     }
 
     const result = JSON.parse(toolCall.function.arguments);
+    result.checkedAt = new Date().toISOString();
+    result.webSearchUsed = webSearchContext.length > 0;
 
     // Save to search history
     try {
