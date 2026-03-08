@@ -3,12 +3,20 @@ import confetti from "canvas-confetti";
 
 interface ConfettiEffectProps {
   score: number;
+  summary?: string;
   trigger: boolean;
 }
 
-export function ConfettiEffect({ score, trigger }: ConfettiEffectProps) {
+const sadKeywords = ["ölüm", "öldü", "hayatını kaybetti", "kaza", "deprem", "sel", "yangın", "savaş", "çatışma", "trajedi", "facia", "cenaze", "terör", "saldırı", "patlama", "şehit", "yaralı", "can kaybı", "felaket", "intihar", "cinayet"];
+
+export function ConfettiEffect({ score, summary = "", trigger }: ConfettiEffectProps) {
   useEffect(() => {
     if (!trigger || score < 80) return;
+
+    // Don't show confetti for sad/tragic news
+    const lower = summary.toLowerCase();
+    const isSad = sadKeywords.some(k => lower.includes(k));
+    if (isSad) return;
 
     const duration = 2000;
     const end = Date.now() + duration;
@@ -35,7 +43,7 @@ export function ConfettiEffect({ score, trigger }: ConfettiEffectProps) {
     };
 
     frame();
-  }, [trigger, score]);
+  }, [trigger, score, summary]);
 
   return null;
 }
