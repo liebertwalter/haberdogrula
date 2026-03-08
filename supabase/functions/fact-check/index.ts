@@ -11,6 +11,14 @@ function isTwitterUrl(url: string): boolean {
   return /^https?:\/\/(www\.)?(twitter\.com|x\.com)\//i.test(url);
 }
 
+function isTikTokUrl(url: string): boolean {
+  return /^https?:\/\/(www\.|vm\.|vt\.)?(tiktok\.com)\//i.test(url);
+}
+
+function isTelegramUrl(url: string): boolean {
+  return /^https?:\/\/(www\.)?(t\.me|telegram\.me)\//i.test(url);
+}
+
 async function fetchTweetContent(url: string): Promise<string | null> {
   // Method 1: Twitter oEmbed API (no auth needed)
   try {
@@ -18,9 +26,7 @@ async function fetchTweetContent(url: string): Promise<string | null> {
     const res = await fetch(oembedUrl);
     if (res.ok) {
       const data = await res.json();
-      // Extract text from the HTML response
       const html = data.html || "";
-      // Strip HTML tags to get plain text
       const text = html
         .replace(/<blockquote[^>]*>/gi, "")
         .replace(/<\/blockquote>/gi, "")
@@ -47,7 +53,7 @@ async function fetchTweetContent(url: string): Promise<string | null> {
     console.error("oEmbed failed:", e);
   }
 
-  // Method 2: Try fxtwitter API (public, no auth)
+  // Method 2: fxtwitter API
   try {
     const fxUrl = url
       .replace("twitter.com", "api.fxtwitter.com")
@@ -68,7 +74,7 @@ async function fetchTweetContent(url: string): Promise<string | null> {
     console.error("fxtwitter failed:", e);
   }
 
-  // Method 3: Try vxtwitter
+  // Method 3: vxtwitter
   try {
     const vxUrl = url
       .replace("twitter.com", "api.vxtwitter.com")
@@ -82,6 +88,130 @@ async function fetchTweetContent(url: string): Promise<string | null> {
     }
   } catch (e) {
     console.error("vxtwitter failed:", e);
+  }
+
+  return null;
+}
+
+async function fetchTikTokContent(url: string): Promise<string | null> {
+  // Method 1: TikTok oEmbed API (official, no auth needed)
+  try {
+    const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+    const res = await fetch(oembedUrl);
+    if (res.ok) {
+      const data = await res.json();
+      const title = data.title || "";
+      const authorName = data.author_name || "";
+      const authorUrl = data.author_url || "";
+      if (title) {
+        return `TikTok videosu - ${authorName} (${authorUrl}):\n\n${title}`;
+      }
+    }
+  } catch (e) {
+    console.error("TikTok oEmbed failed:", e);
+  }
+
+  // Method 2: Try fetching page and extracting meta tags
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Accept": "text/html",
+      },
+      redirect: "follow",
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const titleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"/) ||
+                          html.match(/<meta[^>]*content="([^"]*)"[^>]*property="og:title"/);
+      const descMatch = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"/) ||
+                         html.match(/<meta[^>]*content="([^"]*)"[^>]*property="og:description"/);
+      const authorMatch = html.match(/<meta[^>]*property="og:author"[^>]*content="([^"]*)"/) ||
+                           html.match(/"author":"([^"]*)"/);
+      
+      const title = titleMatch?.[1] || "";
+      const desc = descMatch?.[1] || "";
+      const author = authorMatch?.[1] || "";
+      
+      if (title || desc) {
+        return `TikTok videosu${author ? ` - ${author}` : ""}:\n\nBaşlık: ${title}\n${desc ? `Açıklama: ${desc}` : ""}`;
+      }
+    }
+  } catch (e) {
+    console.error("TikTok meta fetch failed:", e);
+  }
+
+  return null;
+}
+
+async function fetchTelegramContent(url: string): Promise<string | null> {
+  // Telegram public posts have an embed view
+  try {
+    // Convert t.me/channel/123 to t.me/channel/123?embed=1
+    const embedUrl = url.includes("?") ? `${url}&embed=1` : `${url}?embed=1`;
+    const res = await fetch(embedUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Accept": "text/html",
+      },
+      redirect: "follow",
+    });
+    if (res.ok) {
+      const html = await res.text();
+      
+      // Extract message text from embed
+      const msgMatch = html.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+      const authorMatch = html.match(/<div class="tgme_widget_message_author[^"]*"[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/);
+      
+      let text = msgMatch?.[1] || "";
+      const author = authorMatch?.[1]?.replace(/<[^>]+>/g, "").trim() || "";
+      
+      // Strip HTML tags
+      text = text
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<a[^>]*>(.*?)<\/a>/gi, "$1")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .trim();
+      
+      if (text) {
+        return `Telegram mesajı${author ? ` - ${author}` : ""}:\n\n${text}`;
+      }
+    }
+  } catch (e) {
+    console.error("Telegram embed fetch failed:", e);
+  }
+
+  // Method 2: Try og:description
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Accept": "text/html",
+      },
+      redirect: "follow",
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const descMatch = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"/) ||
+                         html.match(/<meta[^>]*content="([^"]*)"[^>]*property="og:description"/);
+      const titleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"/) ||
+                          html.match(/<meta[^>]*content="([^"]*)"[^>]*property="og:title"/);
+      
+      const desc = descMatch?.[1] || "";
+      const title = titleMatch?.[1] || "";
+      
+      if (desc || title) {
+        return `Telegram mesajı${title ? ` - ${title}` : ""}:\n\n${desc}`;
+      }
+    }
+  } catch (e) {
+    console.error("Telegram meta fetch failed:", e);
   }
 
   return null;
@@ -121,6 +251,30 @@ serve(async (req) => {
         } else {
           return new Response(
             JSON.stringify({ error: "X/Twitter içeriği çekilemedi. Lütfen tweet metnini doğrudan yapıştırın." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else if (isTikTokUrl(formattedUrl)) {
+        console.log("Detected TikTok URL, using special handler:", formattedUrl);
+        const tiktokContent = await fetchTikTokContent(formattedUrl);
+        if (tiktokContent) {
+          newsContent = tiktokContent;
+          console.log("TikTok content fetched successfully");
+        } else {
+          return new Response(
+            JSON.stringify({ error: "TikTok içeriği çekilemedi. Lütfen video açıklamasını doğrudan yapıştırın." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else if (isTelegramUrl(formattedUrl)) {
+        console.log("Detected Telegram URL, using special handler:", formattedUrl);
+        const telegramContent = await fetchTelegramContent(formattedUrl);
+        if (telegramContent) {
+          newsContent = telegramContent;
+          console.log("Telegram content fetched successfully");
+        } else {
+          return new Response(
+            JSON.stringify({ error: "Telegram içeriği çekilemedi. Lütfen mesaj metnini doğrudan yapıştırın." }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
