@@ -490,17 +490,22 @@ const Index = () => {
                 <ScoreCelebration score={result.score} summary={result.summary} />
               </div>
 
+              <VerificationBadges result={result} />
               <ScoreInterpretation score={result.score} />
+              <ReliabilityMeter result={result} />
               <QuickSummary result={result} />
               <ReadingTime result={result} />
 
               <div className="flex flex-wrap justify-center gap-2">
                 <ShareButtons result={result} />
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
                 <FavoriteButton result={result} />
                 <PrintResult result={result} />
               </div>
 
               <ScoreBreakdown result={result} />
+              <SourceCredibility result={result} />
 
               <div className="space-y-4">
                 <ResultCard icon={BarChart3} title="Genel Değerlendirme" delay={0.2}>
