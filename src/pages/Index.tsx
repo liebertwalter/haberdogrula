@@ -41,7 +41,6 @@ import { VerificationBadges } from "@/components/VerificationBadges";
 import { ReliabilityMeter } from "@/components/ReliabilityMeter";
 import { SourceCredibility } from "@/components/SourceCredibility";
 import { FactCheckTips } from "@/components/FactCheckTips";
-// New components
 import { TurkeyTime } from "@/components/TurkeyTime";
 import { DailyStreak } from "@/components/DailyStreak";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
@@ -51,7 +50,6 @@ import { Achievements } from "@/components/Achievements";
 import { QRShare } from "@/components/QRShare";
 import { AccessibilityPanel } from "@/components/AccessibilityPanel";
 import { DragDropInput } from "@/components/DragDropInput";
-import { WordCloud } from "@/components/WordCloud";
 import { AutoSaveDraft, loadDraft, clearDraft } from "@/components/AutoSaveDraft";
 import { PropagandaDetector } from "@/components/PropagandaDetector";
 import { ScoreComparison } from "@/components/ScoreComparison";
@@ -82,6 +80,55 @@ import { MediaLiteracyTips } from "@/components/MediaLiteracyTips";
 import { SpoilerWarning } from "@/components/SpoilerWarning";
 import { PopularSearches } from "@/components/PopularSearches";
 import { QuickFacts } from "@/components/QuickFacts";
+// 50 new components
+import { FactTimeline } from "@/components/FactTimeline";
+import { SentimentChart } from "@/components/SentimentChart";
+import { ViralityIndex } from "@/components/ViralityIndex";
+import { ManipulationScore } from "@/components/ManipulationScore";
+import { ClaimExtractor } from "@/components/ClaimExtractor";
+import { SourceDiversity } from "@/components/SourceDiversity";
+import { RiskLevel } from "@/components/RiskLevel";
+import { ContextAnalysis } from "@/components/ContextAnalysis";
+import { VerificationSteps } from "@/components/VerificationSteps";
+import { ContentAge } from "@/components/ContentAge";
+import { FactCheckCertificate } from "@/components/FactCheckCertificate";
+import { AIConfidence } from "@/components/AIConfidence";
+import { HistoricalContext } from "@/components/HistoricalContext";
+import { UserTrustScore } from "@/components/UserTrustScore";
+import { SearchSuggestions } from "@/components/SearchSuggestions";
+import { DataPrivacy } from "@/components/DataPrivacy";
+import { FactCheckLeaderboard } from "@/components/FactCheckLeaderboard";
+import { ContentWarning } from "@/components/ContentWarning";
+import { CitationGenerator } from "@/components/CitationGenerator";
+import { SmartSummary } from "@/components/SmartSummary";
+import { ContentClassifier } from "@/components/ContentClassifier";
+import { RealTimeUpdates } from "@/components/RealTimeUpdates";
+import { FactCheckBadge } from "@/components/FactCheckBadge";
+import { AnalysisDepth } from "@/components/AnalysisDepth";
+import { NewsFreshness } from "@/components/NewsFreshness";
+import { ComparisonTable } from "@/components/ComparisonTable";
+import { UserNotes } from "@/components/UserNotes";
+import { QuickActions } from "@/components/QuickActions";
+import { GeographicRelevance } from "@/components/GeographicRelevance";
+import { AudienceImpact } from "@/components/AudienceImpact";
+import { AlternativeSources } from "@/components/AlternativeSources";
+import { EmotionalTone } from "@/components/EmotionalTone";
+import { FactCheckStats } from "@/components/FactCheckStats";
+import { NewsTimestamp } from "@/components/NewsTimestamp";
+import { SourceAge } from "@/components/SourceAge";
+import { ReadingProgress } from "@/components/ReadingProgress";
+import { NarrativeTracker } from "@/components/NarrativeTracker";
+import { MediaBiasChart } from "@/components/MediaBiasChart";
+import { SocialMediaTracker } from "@/components/SocialMediaTracker";
+import { CredibilityHistory } from "@/components/CredibilityHistory";
+import { ExpertOpinion } from "@/components/ExpertOpinion";
+import { RelatedNews } from "@/components/RelatedNews";
+import { InfoGraphic } from "@/components/InfoGraphic";
+import { CrossReference } from "@/components/CrossReference";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
+import { ProgressTracker } from "@/components/ProgressTracker";
+import { SeasonalTrends } from "@/components/SeasonalTrends";
+import { MultiSourceView } from "@/components/MultiSourceView";
 import { factCheckNews, type FactCheckResult } from "@/lib/api/factcheck";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,7 +163,6 @@ const Index = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const { toast } = useToast();
 
-  // Load draft on mount
   useEffect(() => {
     const draft = loadDraft();
     if (draft.text) setText(draft.text);
@@ -164,7 +210,6 @@ const Index = () => {
     if (data) setHistory(data as SearchHistoryItem[]);
     if (count) setTotalChecks(count);
 
-    // Calculate average score
     const { data: scores } = await supabase
       .from("search_history")
       .select("score")
@@ -212,6 +257,10 @@ const Index = () => {
     setShowConfetti(false);
     setElapsedTime(0);
 
+    // Track total checks
+    const prev = parseInt(localStorage.getItem("fc_total_checks") || "0");
+    localStorage.setItem("fc_total_checks", String(prev + 1));
+
     try {
       const data = await factCheckNews(input);
       setResult(data);
@@ -219,7 +268,6 @@ const Index = () => {
       if (data.score >= 80) {
         setShowConfetti(true);
       }
-      // Track scores for achievements
       if (data.score >= 70) {
         const high = parseInt(localStorage.getItem("fc_high_scores") || "0") + 1;
         localStorage.setItem("fc_high_scores", String(high));
@@ -276,6 +324,7 @@ const Index = () => {
       <KeyboardShortcuts />
       <PWAInstallPrompt />
       <CookieConsent />
+      <ReadingProgress />
 
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
@@ -285,7 +334,6 @@ const Index = () => {
         <div className="absolute top-1/4 right-0 w-72 h-72 bg-danger/5 rounded-full blur-3xl animate-blob animation-delay-3000" />
       </div>
 
-      {/* Tip Banner */}
       <TipBanner />
 
       {/* Header */}
@@ -300,10 +348,12 @@ const Index = () => {
               </span>
             )}
             <DailyStreak />
+            <RealTimeUpdates />
           </div>
           <div className="flex items-center gap-1">
             <TurkeyTime />
             <NotificationBell />
+            <NotificationPreferences />
             <Link to="/favoriler">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Heart className="h-5 w-5" />
@@ -339,12 +389,18 @@ const Index = () => {
                 </p>
               </div>
 
-              {/* Stats */}
+              {/* Stats & Community */}
               <StatsSection />
               <CommunityStats />
+              <FactCheckStats />
               <Achievements totalChecks={totalChecks} />
               <ScoreTrend />
+              <CredibilityHistory />
               <CategoryDistribution />
+              <ProgressTracker />
+              <UserTrustScore />
+              <SeasonalTrends />
+              <FactCheckLeaderboard />
 
               {/* Mode selector */}
               <div className="flex items-center gap-2 justify-center">
@@ -370,10 +426,8 @@ const Index = () => {
                 <CompareMode />
               ) : (
                 <>
-                  {/* Drag & Drop */}
                   <DragDropInput onTextLoad={handleDragDrop} />
 
-                  {/* Input */}
                   <Tabs value={tab} onValueChange={setTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="text" className="gap-2">
@@ -436,6 +490,7 @@ const Index = () => {
                     </TabsContent>
                   </Tabs>
 
+                  <SearchSuggestions onSelect={handleExampleSelect} />
                   <ExamplePrompts onSelect={handleExampleSelect} />
 
                   <Button
@@ -454,6 +509,7 @@ const Index = () => {
               <RecentHighlights />
               <MediaLiteracyTips />
               <FactCheckResources />
+              <DataPrivacy />
 
               {/* Recent searches */}
               {history.length > 0 && (
@@ -508,7 +564,6 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Footer extras */}
               <div className="flex justify-center">
                 <FeedbackForm />
               </div>
@@ -603,40 +658,98 @@ const Index = () => {
                 <ScoreCelebration score={result.score} summary={result.summary} />
               </div>
 
+              {/* Warning for low scores */}
+              <ContentWarning result={result} />
+
+              {/* Badges & metadata */}
               <VerificationBadges result={result} />
+              <ContentClassifier result={result} />
               <AnalysisMetadata result={result} elapsedTime={elapsedTime} />
+              <NewsTimestamp result={result} />
+
+              {/* Summary & overview */}
+              <SmartSummary result={result} />
               <SummaryCard result={result} />
               <NewsCardPreview result={result} />
               <SpoilerWarning result={result} />
+
+              {/* Scores & comparisons */}
               <DateValidator result={result} />
               <ScoreComparison result={result} averageScore={averageScore} />
               <ScoreInterpretation score={result.score} />
+              <RiskLevel result={result} />
               <ReliabilityMeter result={result} />
+
+              {/* Analysis depth */}
+              <FactTimeline result={result} />
+              <VerificationSteps result={result} />
+              <AnalysisDepth result={result} />
+              <AIConfidence result={result} />
+
+              {/* Content analysis */}
+              <SentimentChart result={result} />
+              <EmotionalTone result={result} />
               <FactDensity result={result} />
               <BiasIndicator result={result} />
+              <MediaBiasChart result={result} />
+              <ViralityIndex result={result} />
+              <ManipulationScore result={result} />
+              <NarrativeTracker result={result} />
+
+              {/* Claims & facts */}
+              <ClaimExtractor result={result} />
+              <InfoGraphic result={result} />
+              <ComparisonTable result={result} />
               <QuickSummary result={result} />
               <ReadingTime result={result} />
 
+              {/* Context */}
+              <ContextAnalysis result={result} />
+              <GeographicRelevance result={result} />
+              <ContentAge result={result} />
+              <NewsFreshness result={result} />
+              <HistoricalContext result={result} />
+              <AudienceImpact result={result} />
+
+              {/* Share & export */}
               <div className="flex flex-wrap justify-center gap-2">
                 <ShareButtons result={result} />
               </div>
+              <QuickActions result={result} />
               <div className="flex flex-wrap justify-center gap-2">
                 <FavoriteButton result={result} />
                 <PrintResult result={result} />
                 <BookmarkCategories result={result} />
                 <QRShare score={result.score} />
+                <FactCheckCertificate result={result} />
+                <CitationGenerator result={result} />
+                <FactCheckBadge result={result} />
               </div>
               <div className="flex flex-wrap justify-center gap-2">
                 <ExportOptions result={result} />
                 <EmbedWidget score={result.score} />
               </div>
+              <UserNotes />
 
+              {/* Detailed breakdown */}
               <ScoreBreakdown result={result} />
               <DetailedAnalysis result={result} />
-              <SourceCredibility result={result} />
-              <TrustSignal result={result} />
-              <WordCloud result={result} />
 
+              {/* Sources */}
+              <SourceCredibility result={result} />
+              <SourceDiversity result={result} />
+              <SourceAge result={result} />
+              <CrossReference result={result} />
+              <SocialMediaTracker result={result} />
+              <MultiSourceView result={result} />
+              <TrustSignal result={result} />
+
+              {/* Expert & related */}
+              <ExpertOpinion result={result} />
+              <RelatedNews result={result} />
+              <AlternativeSources result={result} />
+
+              {/* Standard result cards */}
               <div className="space-y-4">
                 <ResultCard icon={BarChart3} title="Genel Değerlendirme" delay={0.2}>
                   {result.summary}
@@ -681,6 +794,7 @@ const Index = () => {
                 )}
               </div>
 
+              {/* Detection & tips */}
               <ClickbaitDetector result={result} />
               <PropagandaDetector result={result} />
               <FactCheckTips result={result} />
