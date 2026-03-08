@@ -1,5 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export interface DetailedScores {
+  sourceReliability: number;
+  factualAccuracy: number;
+  bias: number;
+  freshness: number;
+  consistency: number;
+}
+
 export interface FactCheckResult {
   score: number;
   summary: string;
@@ -7,6 +15,13 @@ export interface FactCheckResult {
   warnings: string[];
   verified: string[];
   debunked: string[];
+  category?: string;
+  sentiment?: string;
+  freshness?: string;
+  confidence?: string;
+  detailedScores?: DetailedScores;
+  checkedAt?: string;
+  webSearchUsed?: boolean;
 }
 
 export async function factCheckNews(input: { text?: string; url?: string }): Promise<FactCheckResult> {
