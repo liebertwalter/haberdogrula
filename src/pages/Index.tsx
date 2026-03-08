@@ -483,7 +483,7 @@ const Index = () => {
               </div>
 
               <div className="flex justify-center">
-                <ScoreCelebration score={result.score} />
+                <ScoreCelebration score={result.score} summary={result.summary} />
               </div>
 
               <ScoreInterpretation score={result.score} />
