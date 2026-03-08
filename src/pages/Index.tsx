@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { LoadingSteps } from "@/components/LoadingSteps";
 import { ResultCard } from "@/components/ResultCard";
@@ -42,6 +41,47 @@ import { VerificationBadges } from "@/components/VerificationBadges";
 import { ReliabilityMeter } from "@/components/ReliabilityMeter";
 import { SourceCredibility } from "@/components/SourceCredibility";
 import { FactCheckTips } from "@/components/FactCheckTips";
+// New components
+import { TurkeyTime } from "@/components/TurkeyTime";
+import { DailyStreak } from "@/components/DailyStreak";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { ClickbaitDetector } from "@/components/ClickbaitDetector";
+import { ExportOptions } from "@/components/ExportOptions";
+import { Achievements } from "@/components/Achievements";
+import { QRShare } from "@/components/QRShare";
+import { AccessibilityPanel } from "@/components/AccessibilityPanel";
+import { DragDropInput } from "@/components/DragDropInput";
+import { WordCloud } from "@/components/WordCloud";
+import { AutoSaveDraft, loadDraft, clearDraft } from "@/components/AutoSaveDraft";
+import { PropagandaDetector } from "@/components/PropagandaDetector";
+import { ScoreComparison } from "@/components/ScoreComparison";
+import { DateValidator } from "@/components/DateValidator";
+import { EmbedWidget } from "@/components/EmbedWidget";
+import { DetailedAnalysis } from "@/components/DetailedAnalysis";
+import { CommunityStats } from "@/components/CommunityStats";
+import { SummaryCard } from "@/components/SummaryCard";
+import { BookmarkCategories } from "@/components/BookmarkCategories";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { CookieConsent } from "@/components/CookieConsent";
+import { BiasIndicator } from "@/components/BiasIndicator";
+import { CategoryDistribution } from "@/components/CategoryDistribution";
+import { ReadabilityScore } from "@/components/ReadabilityScore";
+import { TrustSignal } from "@/components/TrustSignal";
+import { CharacterProgress } from "@/components/CharacterProgress";
+import { URLPreview } from "@/components/URLPreview";
+import { LanguageDetector } from "@/components/LanguageDetector";
+import { FeedbackForm } from "@/components/FeedbackForm";
+import { FactDensity } from "@/components/FactDensity";
+import { RecentHighlights } from "@/components/RecentHighlights";
+import { HistoryManager } from "@/components/HistoryManager";
+import { FactCheckResources } from "@/components/FactCheckResources";
+import { AnalysisMetadata } from "@/components/AnalysisMetadata";
+import { NotificationBell } from "@/components/NotificationBell";
+import { NewsCardPreview } from "@/components/NewsCardPreview";
+import { MediaLiteracyTips } from "@/components/MediaLiteracyTips";
+import { SpoilerWarning } from "@/components/SpoilerWarning";
+import { PopularSearches } from "@/components/PopularSearches";
+import { QuickFacts } from "@/components/QuickFacts";
 import { factCheckNews, type FactCheckResult } from "@/lib/api/factcheck";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,23 +111,27 @@ const Index = () => {
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<SearchHistoryItem | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [totalChecks, setTotalChecks] = useState(0);
+  const [averageScore, setAverageScore] = useState(0);
   const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const { toast } = useToast();
 
+  // Load draft on mount
   useEffect(() => {
+    const draft = loadDraft();
+    if (draft.text) setText(draft.text);
+    if (draft.url) setUrl(draft.url);
     fetchHistory();
   }, []);
 
   useEffect(() => {
     if (!isLoading) return;
     const interval = setInterval(() => {
-      setLoadingStep((prev) => (prev < 3 ? prev + 1 : prev));
+      setLoadingStep((prev) => (prev < 4 ? prev + 1 : prev));
     }, 2500);
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // Timer during loading
   useEffect(() => {
     if (!isLoading) return;
     setLoadingStartTime(Date.now());
@@ -97,11 +141,14 @@ const Index = () => {
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // Ctrl+Enter keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !isLoading && !result) {
         handleSubmit();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+        e.preventDefault();
+        handleReset();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -116,6 +163,16 @@ const Index = () => {
       .limit(20);
     if (data) setHistory(data as SearchHistoryItem[]);
     if (count) setTotalChecks(count);
+
+    // Calculate average score
+    const { data: scores } = await supabase
+      .from("search_history")
+      .select("score")
+      .not("score", "is", null)
+      .limit(100);
+    if (scores && scores.length > 0) {
+      setAverageScore(Math.round(scores.reduce((sum, r) => sum + (r.score || 0), 0) / scores.length));
+    }
   };
 
   const filteredHistory = history.filter((item) => {
@@ -158,8 +215,18 @@ const Index = () => {
     try {
       const data = await factCheckNews(input);
       setResult(data);
+      clearDraft();
       if (data.score >= 80) {
         setShowConfetti(true);
+      }
+      // Track scores for achievements
+      if (data.score >= 70) {
+        const high = parseInt(localStorage.getItem("fc_high_scores") || "0") + 1;
+        localStorage.setItem("fc_high_scores", String(high));
+      }
+      if (data.score < 40) {
+        const low = parseInt(localStorage.getItem("fc_low_scores") || "0") + 1;
+        localStorage.setItem("fc_low_scores", String(low));
       }
       fetchHistory();
     } catch (e: any) {
@@ -193,13 +260,22 @@ const Index = () => {
     toast({ title: "Ses algılandı 🎤", description: "Metin eklendi." });
   };
 
+  const handleDragDrop = (droppedText: string) => {
+    setText(droppedText);
+    setTab("text");
+    setInputMode("single");
+  };
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
-      <TopProgressBar isLoading={isLoading} step={loadingStep} totalSteps={4} />
+      <TopProgressBar isLoading={isLoading} step={loadingStep} totalSteps={5} />
       <ConfettiEffect score={result?.score ?? 0} summary={result?.summary ?? ""} trigger={showConfetti} />
       <BackToTop />
       <NetworkStatus />
       <OnboardingGuide />
+      <KeyboardShortcuts />
+      <PWAInstallPrompt />
+      <CookieConsent />
 
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
@@ -223,13 +299,17 @@ const Index = () => {
                 {totalChecks} doğrulama
               </span>
             )}
+            <DailyStreak />
           </div>
           <div className="flex items-center gap-1">
+            <TurkeyTime />
+            <NotificationBell />
             <Link to="/favoriler">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Heart className="h-5 w-5" />
               </Button>
             </Link>
+            <AccessibilityPanel />
             <Link to="/hakkinda">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Info className="h-5 w-5" />
@@ -261,7 +341,10 @@ const Index = () => {
 
               {/* Stats */}
               <StatsSection />
+              <CommunityStats />
+              <Achievements totalChecks={totalChecks} />
               <ScoreTrend />
+              <CategoryDistribution />
 
               {/* Mode selector */}
               <div className="flex items-center gap-2 justify-center">
@@ -287,6 +370,9 @@ const Index = () => {
                 <CompareMode />
               ) : (
                 <>
+                  {/* Drag & Drop */}
+                  <DragDropInput onTextLoad={handleDragDrop} />
+
                   {/* Input */}
                   <Tabs value={tab} onValueChange={setTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
@@ -307,11 +393,22 @@ const Index = () => {
                         />
                         <div className="flex flex-col gap-2">
                           <VoiceInput onResult={handleVoiceResult} />
+                          <CharacterProgress current={text.length} max={MAX_CHARS} />
                         </div>
                       </div>
-                      {text && <CategoryBadge text={text} />}
+                      {text && (
+                        <div className="space-y-2">
+                          <CategoryBadge text={text} />
+                          <QuickFacts text={text} />
+                          <ReadabilityScore text={text} />
+                          <LanguageDetector text={text} />
+                        </div>
+                      )}
                       <div className="flex justify-between items-center px-1">
-                        <TextStats text={text} />
+                        <div className="flex items-center gap-2">
+                          <TextStats text={text} />
+                          <AutoSaveDraft text={text} url={url} />
+                        </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="hidden sm:inline">Ctrl+Enter</span>
                           <span className={text.length > MAX_CHARS * 0.9 ? "text-warning" : ""}>
@@ -320,7 +417,7 @@ const Index = () => {
                         </div>
                       </div>
                     </TabsContent>
-                    <TabsContent value="url" className="mt-4">
+                    <TabsContent value="url" className="mt-4 space-y-2">
                       <Input
                         type="url"
                         placeholder="https://example.com/haber-basligi"
@@ -328,9 +425,13 @@ const Index = () => {
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                       />
+                      {url && <URLPreview url={url} />}
                       <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
-                        <span>Haber sayfasının URL'sini yapıştırın</span>
-                        <span>Ctrl+Enter</span>
+                        <span>Haber, X, TikTok, Telegram URL'si yapıştırın</span>
+                        <div className="flex items-center gap-2">
+                          <AutoSaveDraft text={text} url={url} />
+                          <span>Ctrl+Enter</span>
+                        </div>
                       </div>
                     </TabsContent>
                   </Tabs>
@@ -347,8 +448,12 @@ const Index = () => {
                 </>
               )}
 
-              {/* Trending topics */}
+              {/* Content sections */}
               <TrendingTopics />
+              <PopularSearches />
+              <RecentHighlights />
+              <MediaLiteracyTips />
+              <FactCheckResources />
 
               {/* Recent searches */}
               {history.length > 0 && (
@@ -357,7 +462,10 @@ const Index = () => {
                     <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Son Aramalar
                     </h2>
-                    <HistoryFilter activeFilter={historyFilter} onFilterChange={setHistoryFilter} />
+                    <div className="flex items-center gap-2">
+                      <HistoryManager />
+                      <HistoryFilter activeFilter={historyFilter} onFilterChange={setHistoryFilter} />
+                    </div>
                   </div>
 
                   <HistorySearch value={historySearch} onChange={setHistorySearch} />
@@ -399,6 +507,11 @@ const Index = () => {
                   </div>
                 </div>
               )}
+
+              {/* Footer extras */}
+              <div className="flex justify-center">
+                <FeedbackForm />
+              </div>
             </motion.div>
           )}
 
@@ -491,8 +604,16 @@ const Index = () => {
               </div>
 
               <VerificationBadges result={result} />
+              <AnalysisMetadata result={result} elapsedTime={elapsedTime} />
+              <SummaryCard result={result} />
+              <NewsCardPreview result={result} />
+              <SpoilerWarning result={result} />
+              <DateValidator result={result} />
+              <ScoreComparison result={result} averageScore={averageScore} />
               <ScoreInterpretation score={result.score} />
               <ReliabilityMeter result={result} />
+              <FactDensity result={result} />
+              <BiasIndicator result={result} />
               <QuickSummary result={result} />
               <ReadingTime result={result} />
 
@@ -502,10 +623,19 @@ const Index = () => {
               <div className="flex flex-wrap justify-center gap-2">
                 <FavoriteButton result={result} />
                 <PrintResult result={result} />
+                <BookmarkCategories result={result} />
+                <QRShare score={result.score} />
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                <ExportOptions result={result} />
+                <EmbedWidget score={result.score} />
               </div>
 
               <ScoreBreakdown result={result} />
+              <DetailedAnalysis result={result} />
               <SourceCredibility result={result} />
+              <TrustSignal result={result} />
+              <WordCloud result={result} />
 
               <div className="space-y-4">
                 <ResultCard icon={BarChart3} title="Genel Değerlendirme" delay={0.2}>
@@ -551,6 +681,8 @@ const Index = () => {
                 )}
               </div>
 
+              <ClickbaitDetector result={result} />
+              <PropagandaDetector result={result} />
               <FactCheckTips result={result} />
               <ResultFeedback />
 
