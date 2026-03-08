@@ -551,6 +551,7 @@ const Index = () => {
                 )}
               </div>
 
+              <FactCheckTips result={result} />
               <ResultFeedback />
 
               <Button onClick={handleReset} variant="outline" className="w-full h-12 text-base">
