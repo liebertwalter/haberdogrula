@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.fe1e3ac29f96419eb3c613b85c1b0469",
+  "appName": "FactCheck - Haber Doğrula",
+  "webDir": "dist",
+  "server": {
+    "url": "https://fe1e3ac2-9f96-419e-b3c6-13b85c1b0469.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
