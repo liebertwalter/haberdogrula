@@ -192,7 +192,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
       <TopProgressBar isLoading={isLoading} step={loadingStep} totalSteps={4} />
-      <ConfettiEffect score={result?.score ?? 0} trigger={showConfetti} />
+      <ConfettiEffect score={result?.score ?? 0} summary={result?.summary ?? ""} trigger={showConfetti} />
       <BackToTop />
       <NetworkStatus />
       <OnboardingGuide />
@@ -483,7 +483,7 @@ const Index = () => {
               </div>
 
               <div className="flex justify-center">
-                <ScoreCelebration score={result.score} />
+                <ScoreCelebration score={result.score} summary={result.summary} />
               </div>
 
               <ScoreInterpretation score={result.score} />
