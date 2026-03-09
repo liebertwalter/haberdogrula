@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "FactCheck - Haber Doğrulama",
   "short_name": "FactCheck",
   "description": "İnternette gördüğünüz haberleri yapay zeka ile doğrulayın.",
@@ -11,6 +12,7 @@
   "lang": "tr",
   "dir": "ltr",
   "categories": ["news", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -37,7 +39,22 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FactCheck Ana Sayfa"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "FactCheck Mobil Görünüm"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Haber Doğrula",
