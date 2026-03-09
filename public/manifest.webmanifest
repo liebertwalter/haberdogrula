@@ -6,9 +6,9 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0a0a0a",
   "theme_color": "#6366f1",
-  "orientation": "portrait-primary",
   "lang": "tr",
   "dir": "ltr",
   "categories": ["news", "utilities"],
@@ -60,7 +60,12 @@
       "name": "Haber Doğrula",
       "short_name": "Doğrula",
       "url": "/dogrula",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
