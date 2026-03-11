@@ -16,6 +16,7 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { ReadingProgress } from "@/components/ReadingProgress";
 import { TipBanner } from "@/components/TipBanner";
 import { Footer } from "@/components/Footer";
+import { FloatingIcons } from "@/components/FloatingIcons";
 
 interface LayoutProps {
   children: React.ReactNode;
