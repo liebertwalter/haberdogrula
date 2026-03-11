@@ -34,6 +34,8 @@ const App = () => (
             <Route path="/kesfet" element={<Explore />} />
             <Route path="/hakkinda" element={<About />} />
             <Route path="/favoriler" element={<Favorites />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
