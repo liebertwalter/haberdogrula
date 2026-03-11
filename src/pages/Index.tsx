@@ -106,6 +106,9 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Did you know */}
+        <DidYouKnow />
+
         {/* Stats */}
         <StatsSection />
         <CommunityStats />
