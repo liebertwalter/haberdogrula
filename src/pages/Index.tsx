@@ -9,6 +9,10 @@ import { CommunityStats } from "@/components/CommunityStats";
 import { SeasonalTrends } from "@/components/SeasonalTrends";
 import { DataPrivacy } from "@/components/DataPrivacy";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { InstagramPrompt } from "@/components/InstagramPrompt";
+import { WelcomeGreeting } from "@/components/WelcomeGreeting";
+import { DidYouKnow } from "@/components/DidYouKnow";
+import { LiveUserCounter } from "@/components/LiveUserCounter";
 
 const quickLinks = [
   { path: "/dogrula", label: "Haber Doğrula", desc: "Metin veya URL ile haber doğrulama", icon: Search, color: "bg-primary/10 text-primary border-primary/20" },
@@ -29,14 +33,21 @@ const features = [
 const Index = () => {
   return (
     <Layout>
+      <InstagramPrompt />
       <OnboardingGuide />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8"
       >
+        {/* Greeting + Live counter */}
+        <div className="flex flex-col items-center gap-2">
+          <WelcomeGreeting />
+          <LiveUserCounter />
+        </div>
+
         {/* Hero */}
-        <div className="text-center space-y-3 pt-6">
+        <div className="text-center space-y-3 pt-2">
           <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
             <Shield className="h-16 w-16 text-primary mx-auto mb-4" />
           </motion.div>
@@ -94,6 +105,9 @@ const Index = () => {
             })}
           </div>
         </div>
+
+        {/* Did you know */}
+        <DidYouKnow />
 
         {/* Stats */}
         <StatsSection />
