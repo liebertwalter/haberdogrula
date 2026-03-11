@@ -40,8 +40,14 @@ const Index = () => {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8"
       >
+        {/* Greeting + Live counter */}
+        <div className="flex flex-col items-center gap-2">
+          <WelcomeGreeting />
+          <LiveUserCounter />
+        </div>
+
         {/* Hero */}
-        <div className="text-center space-y-3 pt-6">
+        <div className="text-center space-y-3 pt-2">
           <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
             <Shield className="h-16 w-16 text-primary mx-auto mb-4" />
           </motion.div>
