@@ -9,6 +9,10 @@ import { CommunityStats } from "@/components/CommunityStats";
 import { SeasonalTrends } from "@/components/SeasonalTrends";
 import { DataPrivacy } from "@/components/DataPrivacy";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { InstagramPrompt } from "@/components/InstagramPrompt";
+import { WelcomeGreeting } from "@/components/WelcomeGreeting";
+import { DidYouKnow } from "@/components/DidYouKnow";
+import { LiveUserCounter } from "@/components/LiveUserCounter";
 
 const quickLinks = [
   { path: "/dogrula", label: "Haber Doğrula", desc: "Metin veya URL ile haber doğrulama", icon: Search, color: "bg-primary/10 text-primary border-primary/20" },
