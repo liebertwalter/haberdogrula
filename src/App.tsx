@@ -12,6 +12,8 @@ import Statistics from "./pages/Statistics";
 import Explore from "./pages/Explore";
 import About from "./pages/About";
 import Favorites from "./pages/Favorites";
+import AdminLogin from "./pages/AdminLogin";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/kesfet" element={<Explore />} />
             <Route path="/hakkinda" element={<About />} />
             <Route path="/favoriler" element={<Favorites />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
