@@ -51,7 +51,7 @@ export function ShareButtons({ result, shareUrl }: ShareButtonsProps) {
   };
 
   const handleFacebook = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shortText)}&u=${encodeURIComponent("https://haberdogrula.lovable.app")}`, "_blank");
+    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shortText)}&u=${encodeURIComponent(link)}`, "_blank");
   };
 
   const handleEmail = () => {
