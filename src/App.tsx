@@ -14,6 +14,7 @@ import About from "./pages/About";
 import Favorites from "./pages/Favorites";
 import AdminLogin from "./pages/AdminLogin";
 import Admin from "./pages/Admin";
+import Result from "./pages/Result";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
