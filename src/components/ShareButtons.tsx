@@ -5,6 +5,7 @@ import { type FactCheckResult } from "@/lib/api/factcheck";
 
 interface ShareButtonsProps {
   result: FactCheckResult;
+  shareUrl?: string;
 }
 
 const getScoreEmoji = (score: number) => {
@@ -21,15 +22,16 @@ const getScoreLabel = (score: number) => {
   return "Güvenilir Değil";
 };
 
-export function ShareButtons({ result }: ShareButtonsProps) {
+export function ShareButtons({ result, shareUrl }: ShareButtonsProps) {
   const { toast } = useToast();
 
   const emoji = getScoreEmoji(result.score);
   const label = getScoreLabel(result.score);
+  const link = shareUrl || "https://haberdogrula.lovable.app";
 
-  const resultText = `${emoji} Haber Doğrulama Sonucu\n\n🎯 Güvenilirlik: %${result.score} (${label})\n📝 ${result.summary}\n\n${result.verified.length > 0 ? `✅ Doğrulanan: ${result.verified.length} bilgi\n` : ""}${result.debunked.length > 0 ? `❌ Yanlış: ${result.debunked.length} bilgi\n` : ""}${result.warnings.length > 0 ? `⚠️ Uyarı: ${result.warnings.length} nokta\n` : ""}\n📊 Kaynak sayısı: ${result.sources.length}\n${result.category ? `📁 Kategori: ${result.category}\n` : ""}${result.confidence ? `🤖 AI Güven: ${result.confidence}\n` : ""}\n🔗 FactCheck - Haber Doğrula\nhttps://haberdogrula.lovable.app`;
+  const resultText = `${emoji} Haber Doğrulama Sonucu\n\n🎯 Güvenilirlik: %${result.score} (${label})\n📝 ${result.summary}\n\n${result.verified.length > 0 ? `✅ Doğrulanan: ${result.verified.length} bilgi\n` : ""}${result.debunked.length > 0 ? `❌ Yanlış: ${result.debunked.length} bilgi\n` : ""}${result.warnings.length > 0 ? `⚠️ Uyarı: ${result.warnings.length} nokta\n` : ""}\n📊 Kaynak sayısı: ${result.sources.length}\n\n🔗 Sonucu gör: ${link}`;
 
-  const shortText = `${emoji} Haber Doğrulama: %${result.score} (${label}) - ${result.summary.substring(0, 100)}... 🔗 haberdogrula.lovable.app`;
+  const shortText = `${emoji} Haber Doğrulama: %${result.score} (${label}) - ${result.summary.substring(0, 80)}... 🔗 ${link}`;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(resultText);
@@ -41,15 +43,15 @@ export function ShareButtons({ result }: ShareButtonsProps) {
   };
 
   const handleTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText)}`, "_blank");
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText)}&url=${encodeURIComponent(link)}`, "_blank");
   };
 
   const handleTelegram = () => {
-    window.open(`https://t.me/share/url?url=${encodeURIComponent("https://haberdogrula.lovable.app")}&text=${encodeURIComponent(resultText)}`, "_blank");
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(resultText)}`, "_blank");
   };
 
   const handleFacebook = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shortText)}&u=${encodeURIComponent("https://haberdogrula.lovable.app")}`, "_blank");
+    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shortText)}&u=${encodeURIComponent(link)}`, "_blank");
   };
 
   const handleEmail = () => {

@@ -22,6 +22,7 @@ export interface FactCheckResult {
   detailedScores?: DetailedScores;
   checkedAt?: string;
   webSearchUsed?: boolean;
+  resultId?: string;
 }
 
 export async function factCheckNews(input: { text?: string; url?: string }): Promise<FactCheckResult> {

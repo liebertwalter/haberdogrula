@@ -18,24 +18,30 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          query_input: string | null
           query_text: string | null
           query_url: string | null
+          result_json: Json | null
           score: number | null
           summary: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          query_input?: string | null
           query_text?: string | null
           query_url?: string | null
+          result_json?: Json | null
           score?: number | null
           summary?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          query_input?: string | null
           query_text?: string | null
           query_url?: string | null
+          result_json?: Json | null
           score?: number | null
           summary?: string | null
         }

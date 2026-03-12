@@ -14,6 +14,7 @@ import About from "./pages/About";
 import Favorites from "./pages/Favorites";
 import AdminLogin from "./pages/AdminLogin";
 import Admin from "./pages/Admin";
+import Result from "./pages/Result";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/favoriler" element={<Favorites />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/sonuc/:id" element={<Result />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

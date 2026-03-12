@@ -306,7 +306,24 @@ export default function Verify() {
             <HistoricalContext result={result} />
             <AudienceImpact result={result} />
 
-            <div className="flex flex-wrap justify-center gap-2"><ShareButtons result={result} /></div>
+            {result.resultId && (
+              <motion.div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <span className="text-xs text-primary font-medium">🔗 Paylaşım linki:</span>
+                <code className="text-[10px] bg-muted px-2 py-1 rounded text-muted-foreground max-w-[200px] truncate">
+                  haberdogrula.lovable.app/sonuc/{result.resultId.substring(0, 8)}...
+                </code>
+                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={() => {
+                  navigator.clipboard.writeText(`https://haberdogrula.lovable.app/sonuc/${result.resultId}`);
+                  toast({ title: "Kopyalandı! 🔗", description: "Paylaşım linki panoya kopyalandı." });
+                }}>
+                  Kopyala
+                </Button>
+              </motion.div>
+            )}
+            <div className="flex flex-wrap justify-center gap-2">
+              <ShareButtons result={result} shareUrl={result.resultId ? `https://haberdogrula.lovable.app/sonuc/${result.resultId}` : undefined} />
+            </div>
             <QuickActions result={result} />
             <div className="flex flex-wrap justify-center gap-2">
               <FavoriteButton result={result} />
