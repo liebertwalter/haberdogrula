@@ -5,6 +5,7 @@ import { type FactCheckResult } from "@/lib/api/factcheck";
 
 interface ShareButtonsProps {
   result: FactCheckResult;
+  shareUrl?: string;
 }
 
 const getScoreEmoji = (score: number) => {
