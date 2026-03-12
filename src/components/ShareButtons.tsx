@@ -43,7 +43,7 @@ export function ShareButtons({ result, shareUrl }: ShareButtonsProps) {
   };
 
   const handleTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText)}`, "_blank");
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText)}&url=${encodeURIComponent(link)}`, "_blank");
   };
 
   const handleTelegram = () => {
