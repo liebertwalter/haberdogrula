@@ -47,7 +47,7 @@ export function ShareButtons({ result, shareUrl }: ShareButtonsProps) {
   };
 
   const handleTelegram = () => {
-    window.open(`https://t.me/share/url?url=${encodeURIComponent("https://haberdogrula.lovable.app")}&text=${encodeURIComponent(resultText)}`, "_blank");
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(resultText)}`, "_blank");
   };
 
   const handleFacebook = () => {
