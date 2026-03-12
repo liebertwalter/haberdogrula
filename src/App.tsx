@@ -37,6 +37,7 @@ const App = () => (
             <Route path="/favoriler" element={<Favorites />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/sonuc/:id" element={<Result />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
